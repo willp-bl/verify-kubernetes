@@ -1,0 +1,104 @@
+# Services are needed to connect to Deployments
+apiVersion: v1
+kind: Service
+metadata:
+  name: stub-idp-service
+spec:
+  type: NodePort # this allows external access
+  selector:
+    app: stub-idp # should match metadata.labels.app in the appropriate Deployment
+  ports:
+  - protocol: TCP
+    port: 50140 # port on the Deployment below
+    nodePort: 30010 # external port on the node that this will be accessible from - between (30000-32767)
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stub-idp-postgres-service
+spec:
+  selector:
+    app: stub-idp-postgres
+  ports:
+  - protocol: TCP
+    port: 5432
+---
+# Deployments of apps
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stub-idp-postgres-deployment
+spec:
+  selector:
+    matchLabels:
+      app: stub-idp-postgres # this is the label used in the Service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: stub-idp-postgres # this is the label used in the Service
+    spec:
+      containers:
+      - name: stub-idp-postgres
+        image: postgres
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_PASSWORD
+          value: "password"
+        - name: POSTGRES_DB
+          value: "stub_idp_db"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stub-idp-deployment
+spec:
+  selector:
+    matchLabels:
+      app: stub-idp
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: stub-idp
+    spec:
+      containers:
+      - name: stub-idp
+        image: govukverify/stub-idp
+        ports:
+        - containerPort: 50140
+        env:
+        - name: LOG_PATH
+          value: "$HOME"
+        - name: KEY_TYPE
+          value: "encoded"
+        - name: STUB_IDP_SIGNING_PRIVATE_KEY
+          value: "<insert from verify-local-startup>"
+        - name: STUB_COUNTRY_SIGNING_PRIVATE_KEY
+          value: "<insert from verify-local-startup>"
+        - name: CERT_TYPE
+          value: "encoded"
+        - name: STUB_IDP_SIGNING_CERT
+          value: "<insert from verify-local-startup>"
+        - name: STUB_COUNTRY_SIGNING_CERT
+          value: "<insert from verify-local-startup>"
+        - name: STUB_IDP_BASIC_AUTH
+          value: "true"
+        - name: GRAPHITE_PREFIX
+          value: "foo"
+        - name: GRAPHITE_REPORTING_FREQUENCY
+          value: "60s"
+        - name: METADATA_ENTITY_ID
+          value: "foo"
+        - name: METADATA_URL
+          value: "foo"
+        - name: TRUSTSTORE_TYPE
+          value: "encoded"
+        - name: METADATA_TRUSTSTORE
+          value: "<insert from verify-local-startup>"
+        - name: TRUSTSTORE_PASSWORD
+          value: "marshmallow"
+        - name: DB_URI
+          # this is the metadata.name from the postgres Service
+          value: "jdbc:postgresql://stub-idp-postgres-service:5432/stub_idp_db?user=postgres&password=password"
