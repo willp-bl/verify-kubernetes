@@ -70,19 +70,19 @@ spec:
         - containerPort: 50140
         env:
         - name: LOG_PATH
-          value: "$HOME"
+          value: "logs"
         - name: KEY_TYPE
           value: "encoded"
         - name: STUB_IDP_SIGNING_PRIVATE_KEY
-          value: "<insert from verify-local-startup>"
+          value: "cat verify-local-startup/data/pki/stub_idp_signing_primary.pk8 | base64 -w0"
         - name: STUB_COUNTRY_SIGNING_PRIVATE_KEY
-          value: "<insert from verify-local-startup>"
+          value: "cat verify-local-startup/data/pki/stub_idp_signing_primary.pk8 | base64 -w0"
         - name: CERT_TYPE
           value: "encoded"
         - name: STUB_IDP_SIGNING_CERT
-          value: "<insert from verify-local-startup>"
+          value: "cat verify-local-startup/data/pki/stub_idp_signing_primary.crt | base64 -w0"
         - name: STUB_COUNTRY_SIGNING_CERT
-          value: "<insert from verify-local-startup>"
+          value: "cat verify-local-startup/data/pki/stub_idp_signing_primary.crt | base64 -w0"
         - name: STUB_IDP_BASIC_AUTH
           value: "true"
         - name: GRAPHITE_PREFIX
@@ -90,15 +90,22 @@ spec:
         - name: GRAPHITE_REPORTING_FREQUENCY
           value: "60s"
         - name: METADATA_ENTITY_ID
-          value: "foo"
+          value: "https://dev-hub.local"
         - name: METADATA_URL
-          value: "foo"
+          value: "http://localhost:55500/dev.xml"
         - name: TRUSTSTORE_TYPE
           value: "encoded"
         - name: METADATA_TRUSTSTORE
-          value: "<insert from verify-local-startup>"
+          value: "cat verify-local-startup/data/pki/metadata.ts | base64 -w0"
         - name: TRUSTSTORE_PASSWORD
           value: "marshmallow"
         - name: DB_URI
           # this is the metadata.name from the postgres Service
           value: "jdbc:postgresql://stub-idp-postgres-service:5432/stub_idp_db?user=postgres&password=password"
+        - name: HUB_CONNECTOR_ENTITY_ID
+          value: "http://localhost:55500/dev-connector.xml"
+        - name: STUB_IDP_HOSTNAME
+          value: "http://192.168.99.100:30010"
+        - name: EUROPEAN_IDENTITY_ENABLED
+          value: "true"
+
