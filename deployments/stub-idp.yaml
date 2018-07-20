@@ -63,6 +63,12 @@ spec:
       labels:
         app: stub-idp
     spec:
+      # this is a pretty gross hack to point localhost to the gateway/host ip address
+      # so that the app thinks the metadata has been resolved from the "localhost" in the entityId
+      hostAliases:
+        - ip: "192.168.99.1"
+          hostnames:
+          - "localhost"
       containers:
       - name: stub-idp
         image: govukverify/stub-idp
