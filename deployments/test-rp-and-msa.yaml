@@ -1,0 +1,65 @@
+# Services are needed to connect to Deployments
+apiVersion: v1
+kind: Service
+metadata:
+  name: matching-service-adapter-service
+spec:
+  selector:
+    app: matching-service-adapter # should match metadata.labels.app in the appropriate Deployment
+  ports:
+  - protocol: TCP
+    port: 30030 # port exposed by this Service within the cluster
+    targetPort: 80 # containerPort on the Deployment below
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: matching-service-adapter-deployment
+spec:
+  selector:
+    matchLabels:
+      app: matching-service-adapter
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: matching-service-adapter
+    spec:
+      # this is a pretty gross hack to point localhost to the gateway/host ip address
+      # so that the app thinks the metadata has been resolved from the "localhost" in the entityId
+      hostAliases:
+        - ip: "192.168.99.1"
+          hostnames:
+          - "localhost"
+      containers:
+      - name: matching-service-adapter
+        image: govukverify/matching-service-adapter
+        ports:
+        - containerPort: 80
+        env:
+        - name: LOG_PATH
+          value: "logs"
+        - name: MSA_ENTITY_ID
+          value: "http://test-rp.dev-rp-ms.local/SAML2/MD"
+        - name: ASSERTION_CONSUMER_SERVICE_URL
+          value: "http://localhost:30030/matching-service/POST"
+        - name: LMS_MATCH_URL
+          value: "http://localhost:30040/test-rp/matching-service/POST"
+        - name: LMS_UAC_URL
+          value: "http://localhost:30040/test-rp/unknown-user/POST"
+        - name: HUB_SSO_URL
+          value: "http://localhost:30020/SAML2/SSO"
+        - name: METADATA_ENTITY_ID
+          value: "https://dev-hub.local"
+        - name: METADATA_URL
+          value: "http://localhost:55500/dev.xml"
+        - name: EUROPEAN_IDENTITY_ENABLED
+          value: "true"
+        - name: HUB_CONNECTOR_ENTITY_ID
+          value: "http://localhost:55500/dev-connector.xml"
+        - name: TRUST_ANCHOR_URL
+          value: "http://localhost:55500/trust-anchor"
+        - name: METADATA_SOURCE_URI
+          value: "http://localhost:55500/aggregator"
+
+
