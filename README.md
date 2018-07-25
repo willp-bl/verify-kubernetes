@@ -33,4 +33,9 @@ Getting a Verify hub &amp; stubs running on Kubernetes
 
 * [the frontend cookies page](http://192.168.99.100:30020/cookies)
     
+## possible issues
 
+* private keys are stored in environment variables
+* is there a better way of getting the environment variables into the pods? i.e. from verify-local-startup?
+* currently this uses a postgres in a pod as a backing store for stub-idp instead of an external backing store
+* possible issues with infinispan when rolling out new versions of apps that use that as a distributed store?
