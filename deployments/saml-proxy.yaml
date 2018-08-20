@@ -1,0 +1,71 @@
+# Services are needed to connect to Deployments
+apiVersion: v1
+kind: Service
+metadata:
+  name: saml-proxy-service
+spec:
+  type: NodePort # this allows external access
+  selector:
+    app: saml-proxy # should match metadata.labels.app in the appropriate Deployment
+  ports:
+  - protocol: TCP
+    port: 80 # port exposed by this Service within the cluster
+    targetPort: 80 # containerPort on the Deployment below
+    nodePort: 30080 # external port on the minikube node that this will be accessible from - between (30000-32767)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: saml-proxy-deployment
+spec:
+  selector:
+    matchLabels:
+      app: saml-proxy
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: saml-proxy
+    spec:
+      # this is a pretty gross hack to point localhost to the gateway/host ip address
+      # so that the app thinks the metadata has been resolved from the "localhost" in the entityId
+      hostAliases:
+        - ip: "192.168.99.1"
+          hostnames:
+          - "localhost"
+      containers:
+      - name: saml-proxy
+        image: govukverify/saml-proxy
+        ports:
+        - containerPort: 80
+        env:
+        - name: METADATA_ENTITY_ID
+          value: "https://dev-hub.local"
+        - name: FRONTEND_URL # external url
+          value: "http://192.168.99.100:30020"
+        - name: CONFIG_URL
+          value: "http://config-service"
+        - name: EVENT_SINK_URL
+          value: "http://stub-event-sink-service"
+        - name: POLICY_URL
+          value: "http://policy-service"
+        - name: METADATA_URL
+          value: "http://localhost:55500/dev.xml"
+        - name: EIDAS_ENABLED
+          value: "true"
+        - name: TRUST_ANCHOR_URL
+          value: "http://localhost:55500/trust-anchor"
+        - name: METADATA_SOURCE_URI
+          value: "http://localhost:55500/aggregator"
+        - name: EVENT_EMITTER_ENABLED
+          value: "false"
+        - name: EVENT_EMITTER_ACCESS_KEY_ID
+          value: "x"
+        - name: EVENT_EMITTER_SECRET_ACCESS_KEY
+          value: "x"
+        - name: EVENT_EMITTER_ACCOUNT_ID
+          value: "x"
+        - name: EVENT_EMITTER_SOURCE_QUEUE_NAME
+          value: "x"
+        - name: EVENT_EMITTER_ENCRYPTION_KEY
+          value: "x"

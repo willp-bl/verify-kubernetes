@@ -2,28 +2,30 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: matching-service-adapter-service
+  name: saml-engine-service
 spec:
+  type: NodePort # this allows external access
   selector:
-    app: matching-service-adapter # should match metadata.labels.app in the appropriate Deployment
+    app: saml-engine # should match metadata.labels.app in the appropriate Deployment
   ports:
   - protocol: TCP
-    port: 30030 # port exposed by this Service within the cluster
+    port: 80 # port exposed by this Service within the cluster
     targetPort: 80 # containerPort on the Deployment below
+    nodePort: 30100 # external port on the minikube node that this will be accessible from - between (30000-32767)
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: matching-service-adapter-deployment
+  name: saml-engine-deployment
 spec:
   selector:
     matchLabels:
-      app: matching-service-adapter
-  replicas: 2
+      app: saml-engine
+  replicas: 1
   template:
     metadata:
       labels:
-        app: matching-service-adapter
+        app: saml-engine
     spec:
       # this is a pretty gross hack to point localhost to the gateway/host ip address
       # so that the app thinks the metadata has been resolved from the "localhost" in the entityId
@@ -32,28 +34,20 @@ spec:
           hostnames:
           - "localhost"
       containers:
-      - name: matching-service-adapter
-        image: govukverify/matching-service-adapter
+      - name: saml-engine
+        image: govukverify/saml-engine
         ports:
         - containerPort: 80
         env:
-        - name: LOG_PATH
-          value: "logs"
-        - name: MSA_ENTITY_ID
-          value: "http://test-rp.dev-rp-ms.local/SAML2/MD"
-        - name: ASSERTION_CONSUMER_SERVICE_URL
-          value: "http://localhost:30030/matching-service/POST"
-        - name: LMS_MATCH_URL
-          value: "http://localhost:30040/test-rp/matching-service/POST"
-        - name: LMS_UAC_URL
-          value: "http://localhost:30040/test-rp/unknown-user/POST"
-        - name: HUB_SSO_URL
-          value: "http://localhost:30020/SAML2/SSO"
         - name: METADATA_ENTITY_ID
           value: "https://dev-hub.local"
+        - name: FRONTEND_URL # external url
+          value: "http://192.168.99.100:30020"
+        - name: CONFIG_URL
+          value: "http://config-service"
         - name: METADATA_URL
           value: "http://localhost:55500/dev.xml"
-        - name: EUROPEAN_IDENTITY_ENABLED
+        - name: EIDAS_ENABLED
           value: "true"
         - name: HUB_CONNECTOR_ENTITY_ID
           value: "http://localhost:55500/dev-connector.xml"
@@ -61,5 +55,3 @@ spec:
           value: "http://localhost:55500/trust-anchor"
         - name: METADATA_SOURCE_URI
           value: "http://localhost:55500/aggregator"
-
-

@@ -1,0 +1,57 @@
+# Services are needed to connect to Deployments
+apiVersion: v1
+kind: Service
+metadata:
+  name: policy-service
+spec:
+  type: NodePort # this allows external access
+  selector:
+    app: policy # should match metadata.labels.app in the appropriate Deployment
+  ports:
+  - protocol: TCP
+    port: 80 # port exposed by this Service within the cluster
+    targetPort: 80 # containerPort on the Deployment below
+    nodePort: 30070 # external port on the minikube node that this will be accessible from - between (30000-32767)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: policy-deployment
+spec:
+  selector:
+    matchLabels:
+      app: policy
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: policy
+    spec:
+      containers:
+      - name: policy
+        image: govukverify/policy
+        ports:
+        - containerPort: 80
+        env:
+        - name: EVENT_SINK_URL
+          value: "http://stub-event-sink-service"
+        - name: SAML_ENGINE_URL
+          value: "http://saml-engine-service"
+        - name: SAML_SOAP_PROXY_URL
+          value: "http://saml-soap-proxy-service"
+        - name: CONFIG_URL
+          value: "http://config-service"
+        - name: HUB_TRUST_STORE_PATH
+          value: "foo"
+        - name: EVENT_EMITTER_ENABLED
+          value: "false"
+        - name: EVENT_EMITTER_ACCESS_KEY_ID
+          value: "x"
+        - name: EVENT_EMITTER_SECRET_ACCESS_KEY
+          value: "x"
+        - name: EVENT_EMITTER_ACCOUNT_ID
+          value: "x"
+        - name: EVENT_EMITTER_SOURCE_QUEUE_NAME
+          value: "x"
+        - name: EVENT_EMITTER_ENCRYPTION_KEY
+          value: "x"

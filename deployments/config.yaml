@@ -2,36 +2,33 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend-service
+  name: config-service
 spec:
   type: NodePort # this allows external access
   selector:
-    app: frontend # should match metadata.labels.app in the appropriate Deployment
+    app: config # should match metadata.labels.app in the appropriate Deployment
   ports:
   - protocol: TCP
     port: 80 # port exposed by this Service within the cluster
     targetPort: 80 # containerPort on the Deployment below
-    nodePort: 30020 # external port on the minikube node that this will be accessible from - between (30000-32767)
+    nodePort: 30060 # external port on the minikube node that this will be accessible from - between (30000-32767)
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend-deployment
+  name: config-deployment
 spec:
   selector:
     matchLabels:
-      app: frontend
+      app: config
   replicas: 1
   template:
     metadata:
       labels:
-        app: frontend
+        app: config
     spec:
       containers:
-      - name: frontend
-        image: govukverify/frontend
+      - name: config
+        image: govukverify/config
         ports:
         - containerPort: 80
-        env:
-        - name: LOG_PATH
-          value: "logs"
